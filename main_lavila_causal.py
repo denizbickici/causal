@@ -129,6 +129,10 @@ def main_worker(gpu, ngpus_per_node, args):
 	trainer.transition_prior_verb.cuda()
 	trainer.transition_prior_noun.cuda()
 	trainer.cls_net.cuda()
+
+	print('Temporal pooling:', args.temporal_pooling)
+	print('Temporal target len:', args.temporal_target_len)
+	print('Temporal stride step:', args.temporal_stride_step)
 	
 	# create optimizer
 	if args.optimizer.lower() == 'adam':
