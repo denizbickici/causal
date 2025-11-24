@@ -1,0 +1,39 @@
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> loading checkpoint '/scratch/users/bickici/projects/causal/causal/checkpoint/whl/epoch0049.pth.tar'
+=> loaded checkpoint '/scratch/users/bickici/projects/causal/causal/checkpoint/whl/epoch0049.pth.tar' (epoch 49)0
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32
+=> no checkpoint found at 'True'
+Starting training loop for rank: 0, total batch size: 32

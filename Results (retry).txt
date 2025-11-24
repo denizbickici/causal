@@ -1,0 +1,110 @@
+Results (retry):
+
+
+######################
+EGTEA
+######################
+MViT Noun: 		82.74
+MViT Verb: 		83.53
+------------------------------
+VAE: 			68.94 -> (72.7) This one was with higher vae_latent_dim
+Action logits: 		81.90
+VAE + Action logits: 	82.49 (original vae dim)
+
+Settings for Test: 3xCrops, 10xClips
+
+
+
+
+###################
+EK100
+####################
+MViT Noun: 		46.10 (improvements?)
+MViT Verb: 		29.47 (improvements?) 39.615
+------------------------------
+Action logits (lavila):	50.7 -> 50.99
+VAE:			21.73
+VAE + Action logits: 	51.01 -> 51.3
+
+
+Settings for Test: 3xCrops, 1xClips 
+-> Feature size became to large
+
+
+
+
+
+
+#####################################################################################
+Progress/Findings
+
+----------------------------------
+Notes:
+- Lavila does use for EK100 -> 1x crop, 1x Clip
+- But it seems they published a weeker Checkpoint, with Acc = 50.74
+
+- TIM propably Needs one more week -> Feature extraction takes some time
+
+---------------------------------------------
+
+EK100
+###########################################################
+Single models Results:
+###########################################################
+
+MViT Noun: 		46.10 (improvements? no time yet)
+MViT Verb (OF):		29.47 -> Now: 39.62%
+MViT Verb (RGB):	56.02 (new)
+
+------------------------------
+###########################################################
+VAE RESULTS:
+###########################################################
+
+Causal VAE -> [MViT Noun + MVit Verb (OF)]
+
+Action logits (lavila):	50.74 
+VAE + Action logits: 	51.01 
+
+==> Increase in MViT Verb (OF) accuracy did not help
+
+--------------------------------
+
+Causal VAE -> [MViT Noun + MVit Verb (RGB)]
+
+Action logits (lavila):	50.74 
+VAE + Action logits: 	51.1 
+
+
+
+
+
+
+
+
+
+
+##########################
+
+Some Experiments:
+
+Verb_OF
+--------
+VAE 8
+50.957
+VAE 16
+50.87
+
+Verb_Spatial
+---------
+VAE 4, Batch 32 -> 51.07
+VAE 4, Batch 8 	-> 51.1
+VAE 8, Batch 32 -> 51.04
+
+
+
+#################################
+EK100
+Stride ::2
+
+VAE 4; Batch 32 -> 51.14811706542969
