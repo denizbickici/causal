@@ -457,39 +457,37 @@ class Trainer(nn.Module):
                 #noun_feat = torch.cat((spatial_noun_feat_cls.unsqueeze(2), noun_feat), dim=2)
 
                 if verb_feat.dim() == 3:
-                verb_feat = verb_feat.unsqueeze(1)
-            if noun_feat.dim() == 3:
-                noun_feat = noun_feat.unsqueeze(1)
-            if act_feat.dim() == 3:
-                act_feat = act_feat.unsqueeze(1)
-            if action_logits.dim() == 2:
-                action_logits = action_logits.unsqueeze(1)
-            # Restrict to first view/crop to match single TIM view
-            if verb_feat.shape[1] > 1:
-                verb_feat = verb_feat[:, :1, ...]
-            if noun_feat.shape[1] > 1:
-                noun_feat = noun_feat[:, :1, ...]
-            if act_feat.shape[1] > 1:
-                act_feat = act_feat[:, :1, ...]
-            if action_logits.shape[1] > 1:
-                action_logits = action_logits[:, :1, ...]
+                    verb_feat = verb_feat.unsqueeze(1)
+                if noun_feat.dim() == 3:
+                    noun_feat = noun_feat.unsqueeze(1)
+                if act_feat.dim() == 3:
+                    act_feat = act_feat.unsqueeze(1)
+                if action_logits.dim() == 2:
+                    action_logits = action_logits.unsqueeze(1)
+                # Restrict to first view/crop to match single TIM view
+                if verb_feat.shape[1] > 1:
+                    verb_feat = verb_feat[:, :1, ...]
+                if noun_feat.shape[1] > 1:
+                    noun_feat = noun_feat[:, :1, ...]
+                if act_feat.shape[1] > 1:
+                    act_feat = act_feat[:, :1, ...]
+                if action_logits.shape[1] > 1:
+                    action_logits = action_logits[:, :1, ...]
             
-            preds = []
-            for i in range(verb_feat.shape[1]):
-            #for i in range(10):
-                batch_size, length, _ = verb_feat[:,i,:,:].shape    
-                    verb_x_recon, verb_mus, verb_logvars, verb_z_est = self.verb_net(verb_feat[:,i,:,:])
-                    noun_x_recon, noun_mus, noun_logvars, noun_z_est = self.noun_net(noun_feat[:,i,:,:])
-                    act_u = self.domain_enc_act(act_feat[:,i,:,:])
+                preds = []
+                for i in range(verb_feat.shape[1]):
+                    batch_size, length, _ = verb_feat[:, i, :, :].shape    
+                    verb_x_recon, verb_mus, verb_logvars, verb_z_est = self.verb_net(verb_feat[:, i, :, :])
+                    noun_x_recon, noun_mus, noun_logvars, noun_z_est = self.noun_net(noun_feat[:, i, :, :])
+                    act_u = self.domain_enc_act(act_feat[:, i, :, :])
                     
                     total_act_u.append(act_u)
                     total_z_verb.append(verb_z_est)
                     total_z_noun.append(noun_z_est)
 
-                            
                     # recon_loss = self.reconstruction_loss(x, x_recon)
-                    verb_recon_loss = self.reconstruction_loss(verb_feat[:,i,:,:][:, :self.lags], verb_x_recon[:, :self.lags]) + (self.reconstruction_loss(verb_feat[:,i,:,:][:, self.lags:], verb_x_recon[:, self.lags:]))/(length-self.lags)
-                    noun_recon_loss = self.reconstruction_loss(noun_feat[:,i,:,:][:, :self.lags], noun_x_recon[:, :self.lags]) + (self.reconstruction_loss(noun_feat[:,i,:,:][:, self.lags:], noun_x_recon[:, self.lags:]))/(length-self.lags)
+                    verb_recon_loss = self.reconstruction_loss(verb_feat[:, i, :, :][:, :self.lags], verb_x_recon[:, :self.lags]) + (self.reconstruction_loss(verb_feat[:, i, :, :][:, self.lags:], verb_x_recon[:, self.lags:]))/(length-self.lags)
+                    noun_recon_loss = self.reconstruction_loss(noun_feat[:, i, :, :][:, :self.lags], noun_x_recon[:, :self.lags]) + (self.reconstruction_loss(noun_feat[:, i, :, :][:, self.lags:], noun_x_recon[:, self.lags:]))/(length-self.lags)
                     
                     pred = self.cls_net(torch.cat((verb_z_est, noun_z_est), dim=2).view(batch_size,-1))
                     preds.append(pred.unsqueeze(1))
