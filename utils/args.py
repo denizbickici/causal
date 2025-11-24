@@ -198,6 +198,31 @@ def get_args(description='whl'):
                         type=int,
                         default=180,
                         help='')
+    # Feature file paths (override dataloader defaults when provided)
+    parser.add_argument('--verb_feat_train',
+                        type=str,
+                        default='',
+                        help='path to verb features (.pt) for training')
+    parser.add_argument('--verb_feat_val',
+                        type=str,
+                        default='',
+                        help='path to verb features (.pt) for validation')
+    parser.add_argument('--noun_feat_train',
+                        type=str,
+                        default='',
+                        help='path to noun features (.pt) for training')
+    parser.add_argument('--noun_feat_val',
+                        type=str,
+                        default='',
+                        help='path to noun features (.pt) for validation')
+    parser.add_argument('--action_feat_train',
+                        type=str,
+                        default='',
+                        help='path to action/TIM features (.pt) for training')
+    parser.add_argument('--action_feat_val',
+                        type=str,
+                        default='',
+                        help='path to action/TIM features (.pt) for validation')
     parser.add_argument('--n_diffusion_steps',
                         type=int,
                         default=200,

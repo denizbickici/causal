@@ -26,13 +26,13 @@ class ActionFuseDataset(Dataset):
         ek100
         """
         if is_val:
-            verb_json_path = '/scratch/users/bickici/data/causal/verb_spatial/improved_63/egtea_test_feat.pt'
-            noun_json_path = '/scratch/users/bickici/data/causal/noun/egtea_test_feat_1crop.pt'
-            act_json_path = '/scratch/users/bickici/data/TIM/action_tokens_val/features/epic_val_feat.pt'
+            verb_json_path = (args.verb_feat_val if args and hasattr(args, 'verb_feat_val') and args.verb_feat_val else '/scratch/users/bickici/data/causal/verb_spatial/improved_63/egtea_test_feat.pt')
+            noun_json_path = (args.noun_feat_val if args and hasattr(args, 'noun_feat_val') and args.noun_feat_val else '/scratch/users/bickici/data/causal/noun/egtea_test_feat_1crop.pt')
+            act_json_path = (args.action_feat_val if args and hasattr(args, 'action_feat_val') and args.action_feat_val else '/scratch/users/bickici/data/TIM/action_tokens_val/features/epic_val_feat.pt')
         else:
-            verb_json_path = '/scratch/users/bickici/data/causal/verb_spatial/improved_63/egtea_train_feat.pt'
-            noun_json_path = '/scratch/users/bickici/data/causal/noun/egtea_train_feat.pt'
-            act_json_path = '/scratch/users/bickici/data/TIM/action_tokens_train/features/epic_train_feat.pt'
+            verb_json_path = (args.verb_feat_train if args and hasattr(args, 'verb_feat_train') and args.verb_feat_train else '/scratch/users/bickici/data/causal/verb_spatial/improved_63/egtea_train_feat.pt')
+            noun_json_path = (args.noun_feat_train if args and hasattr(args, 'noun_feat_train') and args.noun_feat_train else '/scratch/users/bickici/data/causal/noun/egtea_train_feat.pt')
+            act_json_path = (args.action_feat_train if args and hasattr(args, 'action_feat_train') and args.action_feat_train else '/scratch/users/bickici/data/TIM/action_tokens_train/features/epic_train_feat.pt')
         
         """
         EGTEA
