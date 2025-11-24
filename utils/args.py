@@ -211,6 +211,10 @@ def get_args(description='whl'):
                         type=float,
                         default=10.0,
                         help='scaling for VAE branch logits when fusing with TIM logits')
+    parser.add_argument('--fusion_gate_clamp',
+                        type=float,
+                        default=2.0,
+                        help='log-scale clamp for learnable fusion gates (exp(-clamp)..exp(clamp))')
     parser.add_argument('--disable_fusion_std_scale',
                         action='store_true',
                         help='disable std-based rescaling between TIM logits and VAE logits')

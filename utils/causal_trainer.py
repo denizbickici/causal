@@ -31,6 +31,7 @@ class Trainer(nn.Module):
             fusion_use_std_scale=True,
             feature_norm='l2',
             feature_norm_eps=1e-6,
+            fusion_gate_clamp=2.0,
             temporal_target_len=8,
             temporal_pooling='stride',  # 'adaptive_avg' | 'adaptive_max' | 'stride'
             stride_step=0,
@@ -63,6 +64,9 @@ class Trainer(nn.Module):
         self.verb_norm = self._build_norm(verb_dim)
         self.noun_norm = self._build_norm(noun_dim)
         self.act_norm = self._build_norm(domain_embedding_dim)
+        self.tim_gate = nn.Parameter(torch.zeros(1))
+        self.vae_gate = nn.Parameter(torch.zeros(1))
+        self.fusion_gate_clamp = fusion_gate_clamp
 
         # Initialize transition prior
         #self.transition_prior = NPTransitionPrior(lags=lags, latent_size=z_dim, num_layers=2, hidden_dim=hidden_dim)
@@ -110,6 +114,24 @@ class Trainer(nn.Module):
         noun_feat = self._normalize_stream(noun_feat, self.noun_norm)
         act_feat = self._normalize_stream(act_feat, self.act_norm)
         return verb_feat, noun_feat, act_feat
+    
+    def _compute_scale(self, logits, preds):
+        if self.fusion_use_std_scale:
+            pred_std = preds.std(dim=1, keepdim=True)
+            logits_std = logits.std(dim=1, keepdim=True)
+            scale = (logits_std / (pred_std + 1e-6)).detach()
+        else:
+            scale = 1.0
+        return scale
+
+    def _fuse_logits(self, tim_logits, vae_logits):
+        """Fuse TIM logits with VAE logits using learnable gates and optional std-based scaling."""
+        scale = self._compute_scale(tim_logits, vae_logits)
+        clamp = self.fusion_gate_clamp
+        device = tim_logits.device
+        tim_scale = torch.exp(torch.clamp(self.tim_gate.to(device), -clamp, clamp))
+        vae_scale = torch.exp(torch.clamp(self.vae_gate.to(device), -clamp, clamp))
+        return tim_scale * tim_logits + vae_scale * self.fusion_alpha * vae_logits * scale
                 
     def reconstruction_loss(self, x, x_recon, distribution='gaussian'):
         batch_size = x.shape[0]
@@ -285,13 +307,7 @@ class Trainer(nn.Module):
             if not self.pretrain_vae:
                 pred_cls = self.cls_net(torch.cat((verb_z_est, noun_z_est), dim=2).view(batch_size,-1))
                 logits = self._reduce_action_logits(action_logits)
-                if self.fusion_use_std_scale:
-                    pred_std = pred_cls.std(dim=1, keepdim=True)
-                    logits_std = logits.std(dim=1, keepdim=True)
-                    scale = (logits_std / (pred_std + 1e-6)).detach()
-                else:
-                    scale = 1.0
-                pred = logits + self.fusion_alpha * pred_cls * scale
+                pred = self._fuse_logits(logits, pred_cls)
                 class_loss = self.criterion(pred, labels)
 
             # VAE training
@@ -431,15 +447,7 @@ class Trainer(nn.Module):
                 preds = torch.cat(preds, dim=1)
                 preds = torch.mean(preds, dim=1)
                 logits = self._reduce_action_logits(action_logits)
-                if self.fusion_use_std_scale:
-                    pred_std = preds.std(dim=1, keepdim=True)
-                    logits_std = logits.std(dim=1, keepdim=True)
-                    scale = (logits_std / (pred_std + 1e-6)).detach()
-                else:
-                    scale = 1.0
-                pred = logits + self.fusion_alpha * preds * scale
-                #pred = logits
-                #pred = preds 
+                pred = self._fuse_logits(logits, preds)
             
                 (acc1, acc5) = accuracy(pred.cpu(), labels.cpu(), topk=(1, 5),)
                 acc_top1.update(acc1.item(), batch_size)
@@ -554,15 +562,7 @@ class Trainer(nn.Module):
                 preds = torch.mean(preds, dim=1)
                 logits = self._reduce_action_logits(action_logits)
                 total_lavila_pred.append(logits)
-                if self.fusion_use_std_scale:
-                    pred_std = preds.std(dim=1, keepdim=True)
-                    logits_std = logits.std(dim=1, keepdim=True)
-                    scale = (logits_std / (pred_std + 1e-6)).detach()
-                else:
-                    scale = 1.0
-                pred = logits + self.fusion_alpha * preds * scale
-                #pred = logits
-                #pred = preds 
+                pred = self._fuse_logits(logits, preds)
                 total_final_pred.append(pred)
                 total_label.append(labels)
                 
@@ -644,15 +644,7 @@ class Trainer(nn.Module):
             preds = torch.cat(preds, dim=1)
             preds = torch.mean(preds, dim=1)
             logits = self._reduce_action_logits(action_logits)
-            if self.fusion_use_std_scale:
-                pred_std = preds.std(dim=1, keepdim=True)
-                logits_std = logits.std(dim=1, keepdim=True)
-                scale = (logits_std / (pred_std + 1e-6)).detach()
-            else:
-                scale = 1.0
-            pred = logits + self.fusion_alpha * preds * scale
-            #pred = logits
-            #pred = preds 
+            pred = self._fuse_logits(logits, preds)
             
             (acc1, acc5) = accuracy(pred.cpu(), labels.cpu(), topk=(1, 5),)
             acc_top1.update(acc1.item(), batch_size)
@@ -702,14 +694,7 @@ class Trainer(nn.Module):
 
             pred_cls = self.cls_net(torch.cat((verb_z_est, noun_z_est), dim=2).view(batch_size,-1))
             logits = self._reduce_action_logits(action_logits)
-            if self.fusion_use_std_scale:
-                pred_std = pred_cls.std(dim=1, keepdim=True)
-                logits_std = logits.std(dim=1, keepdim=True)
-                scale = (logits_std / (pred_std + 1e-6)).detach()
-            else:
-                scale = 1.0
-            pred = logits + self.fusion_alpha * pred_cls * scale
-            #pred = logits
+            pred = self._fuse_logits(logits, pred_cls)
             class_loss = self.criterion(pred, labels)
 
             self.optimizer.zero_grad()            
@@ -789,15 +774,7 @@ class Trainer(nn.Module):
             preds = torch.cat(preds, dim=1)
             preds = torch.mean(preds, dim=1)
             logits = self._reduce_action_logits(action_logits)
-            if self.fusion_use_std_scale:
-                pred_std = preds.std(dim=1, keepdim=True)
-                logits_std = logits.std(dim=1, keepdim=True)
-                scale = (logits_std / (pred_std + 1e-6)).detach()
-            else:
-                scale = 1.0
-            pred = logits + self.fusion_alpha * preds * scale
-            #pred = logits
-            #pred = preds 
+            pred = self._fuse_logits(logits, preds)
             
             (acc1, acc5) = accuracy(pred.cpu(), labels.cpu(), topk=(1, 5),)
             acc_top1.update(acc1.item(), batch_size)

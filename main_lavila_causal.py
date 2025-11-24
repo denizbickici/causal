@@ -121,12 +121,14 @@ def main_worker(gpu, ngpus_per_node, args):
 					pretrain_vae=args.pretrain_vae,
 					fusion_alpha=args.fusion_alpha,
 					fusion_use_std_scale=not args.disable_fusion_std_scale,
+					fusion_gate_clamp=args.fusion_gate_clamp,
 					feature_norm=args.feature_norm,
 					feature_norm_eps=args.feature_norm_eps,
 					temporal_target_len=args.temporal_target_len,
 					temporal_pooling=args.temporal_pooling,
 					stride_step=args.temporal_stride_step,
 			        )
+	trainer.cuda()
 	trainer.verb_net.cuda()
 	trainer.noun_net.cuda()
 	trainer.domain_enc_act.cuda()
