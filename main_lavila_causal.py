@@ -119,6 +119,10 @@ def main_worker(gpu, ngpus_per_node, args):
 					delta=0.05,
 					correlation='Pearson',
 					pretrain_vae=args.pretrain_vae,
+					fusion_alpha=args.fusion_alpha,
+					fusion_use_std_scale=not args.disable_fusion_std_scale,
+					feature_norm=args.feature_norm,
+					feature_norm_eps=args.feature_norm_eps,
 					temporal_target_len=args.temporal_target_len,
 					temporal_pooling=args.temporal_pooling,
 					stride_step=args.temporal_stride_step,
@@ -129,6 +133,9 @@ def main_worker(gpu, ngpus_per_node, args):
 	trainer.transition_prior_verb.cuda()
 	trainer.transition_prior_noun.cuda()
 	trainer.cls_net.cuda()
+	trainer.verb_norm.cuda()
+	trainer.noun_norm.cuda()
+	trainer.act_norm.cuda()
 
 	print('Temporal pooling:', args.temporal_pooling)
 	print('Temporal target len:', args.temporal_target_len)

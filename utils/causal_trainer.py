@@ -29,6 +29,8 @@ class Trainer(nn.Module):
             pretrain_vae=False,
             fusion_alpha=10,
             fusion_use_std_scale=True,
+            feature_norm='l2',
+            feature_norm_eps=1e-6,
             temporal_target_len=8,
             temporal_pooling='stride',  # 'adaptive_avg' | 'adaptive_max' | 'stride'
             stride_step=0,
@@ -50,12 +52,17 @@ class Trainer(nn.Module):
         self.gamma = gamma
         self.delta = delta
         self.correlation = correlation
+        self.feature_norm = feature_norm
+        self.feature_norm_eps = feature_norm_eps
         self.verb_net = BetaVAE_MLP(input_dim=verb_dim, z_dim=z_dim, hidden_dim=hidden_dim)
         self.noun_net = BetaVAE_MLP(input_dim=noun_dim, z_dim=z_dim, hidden_dim=hidden_dim)
         #self.domain_enc_act = DomainEncoder(input_size=domain_embedding_dim, hidden_size=512, n_adapters=30)
         self.domain_enc_act = DomainEncoder(input_size=domain_embedding_dim, hidden_size=512, n_adapters=30)
         #self.domain_enc_act2 = DomainEncoder(input_size=domain_embedding_dim, hidden_size=512, n_adapters=60)
         self.pretrain_vae = pretrain_vae
+        self.verb_norm = self._build_norm(verb_dim)
+        self.noun_norm = self._build_norm(noun_dim)
+        self.act_norm = self._build_norm(domain_embedding_dim)
 
         # Initialize transition prior
         #self.transition_prior = NPTransitionPrior(lags=lags, latent_size=z_dim, num_layers=2, hidden_dim=hidden_dim)
@@ -82,6 +89,27 @@ class Trainer(nn.Module):
     def base_dist(self):
         # Noise density function
         return D.MultivariateNormal(self.base_dist_mean, self.base_dist_var)
+    
+    def _build_norm(self, dim):
+        """Create optional LayerNorm for a feature dim; fall back to identity."""
+        if self.feature_norm in ('layernorm', 'l2_layernorm'):
+            return nn.LayerNorm(dim)
+        return nn.Identity()
+    
+    def _normalize_stream(self, feat, norm_layer):
+        """Apply configured normalization to a single feature stream."""
+        if self.feature_norm in ('l2', 'l2_layernorm'):
+            feat = F.normalize(feat, p=2, dim=-1, eps=self.feature_norm_eps)
+        if self.feature_norm in ('layernorm', 'l2_layernorm'):
+            feat = norm_layer(feat)
+        return feat
+
+    def _normalize_inputs(self, verb_feat, noun_feat, act_feat):
+        """Normalize verb/noun/TIM features before encoding."""
+        verb_feat = self._normalize_stream(verb_feat, self.verb_norm)
+        noun_feat = self._normalize_stream(noun_feat, self.noun_norm)
+        act_feat = self._normalize_stream(act_feat, self.act_norm)
+        return verb_feat, noun_feat, act_feat
                 
     def reconstruction_loss(self, x, x_recon, distribution='gaussian'):
         batch_size = x.shape[0]
@@ -207,6 +235,7 @@ class Trainer(nn.Module):
             noun_feat = noun_feat[:,::2,:]'''
             # Max pooling: select max features from adjacent frames to go from 16 to 8
             act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
+            verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             '''verb_feat = verb_feat[:,:8,:]
             noun_feat = noun_feat[:,:8,:]'''
             #print(verb_feat.shape, spatial_verb_feat_cls.shape)
@@ -349,6 +378,7 @@ class Trainer(nn.Module):
                 action_logits = action_logits[:, :1, ...]
             # Max pooling: select max features from adjacent frames to go from 16 to 8
             act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
+            verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             '''verb_feat = verb_feat[:,:,:8,:]
             noun_feat = noun_feat[:,:,:8,:]'''
             
@@ -477,6 +507,8 @@ class Trainer(nn.Module):
                     act_feat = act_feat[:, :1, ...]
                 if action_logits.shape[1] > 1:
                     action_logits = action_logits[:, :1, ...]
+                act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
+                verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             
                 preds = []
                 for i in range(verb_feat.shape[1]):
@@ -589,6 +621,7 @@ class Trainer(nn.Module):
             if action_logits.shape[1] > 1:
                 action_logits = action_logits[:, :1, ...]
             act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
+            verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             '''verb_feat = verb_feat[:,:,:8,:]
             noun_feat = noun_feat[:,:,:8,:]'''
 
@@ -649,6 +682,7 @@ class Trainer(nn.Module):
             noun_feat = noun_feat[:,::2,:]'''
 
             act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
+            verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             '''verb_feat = verb_feat[:,:8,:]
             noun_feat = noun_feat[:,:8,:]'''
             #print(verb_feat.shape, spatial_verb_feat_cls.shape)
@@ -732,6 +766,7 @@ class Trainer(nn.Module):
             if action_logits.shape[1] > 1:
                 action_logits = action_logits[:, :1, ...]
             act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)  # [B, crops, 8, 1024]
+            verb_feat, noun_feat, act_feat = self._normalize_inputs(verb_feat, noun_feat, act_feat)
             '''verb_feat = verb_feat[:,:,:8,:]
             noun_feat = noun_feat[:,:,:8,:]'''
 

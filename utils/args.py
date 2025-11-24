@@ -198,6 +198,22 @@ def get_args(description='whl'):
                         type=int,
                         default=180,
                         help='')
+    parser.add_argument('--feature_norm',
+                        type=str,
+                        default='l2',
+                        choices=['none', 'l2', 'layernorm', 'l2_layernorm'],
+                        help='normalization applied to TIM/V-JEPA feature streams before fusion')
+    parser.add_argument('--feature_norm_eps',
+                        type=float,
+                        default=1e-6,
+                        help='epsilon used for feature normalization')
+    parser.add_argument('--fusion_alpha',
+                        type=float,
+                        default=10.0,
+                        help='scaling for VAE branch logits when fusing with TIM logits')
+    parser.add_argument('--disable_fusion_std_scale',
+                        action='store_true',
+                        help='disable std-based rescaling between TIM logits and VAE logits')
     parser.add_argument('--temporal_target_len',
                         type=int,
                         default=16,
