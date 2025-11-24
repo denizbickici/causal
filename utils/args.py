@@ -198,6 +198,19 @@ def get_args(description='whl'):
                         type=int,
                         default=180,
                         help='')
+    parser.add_argument('--temporal_target_len',
+                        type=int,
+                        default=16,
+                        help='temporal length after pooling/striding for action features')
+    parser.add_argument('--temporal_pooling',
+                        type=str,
+                        default='stride',
+                        choices=['stride', 'adaptive_avg', 'adaptive_max'],
+                        help='temporal reduction strategy for action features')
+    parser.add_argument('--temporal_stride_step',
+                        type=int,
+                        default=0,
+                        help='stride step for temporal reduction when using stride mode (0 auto-selects)')
     # Feature file paths (override dataloader defaults when provided)
     parser.add_argument('--verb_feat_train',
                         type=str,

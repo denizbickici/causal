@@ -119,7 +119,9 @@ def main_worker(gpu, ngpus_per_node, args):
 					delta=0.05,
 					correlation='Pearson',
 					pretrain_vae=args.pretrain_vae,
-					temporal_target_len=16
+					temporal_target_len=args.temporal_target_len,
+					temporal_pooling=args.temporal_pooling,
+					stride_step=args.temporal_stride_step,
 			        )
 	trainer.verb_net.cuda()
 	trainer.noun_net.cuda()

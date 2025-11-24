@@ -102,8 +102,10 @@ class Trainer(nn.Module):
 
         return recon_loss
 
-    def _pool_to_steps(self, tensor, target_len=8, mode='adaptive_avg'):
+    def _pool_to_steps(self, tensor, target_len=None, mode='adaptive_avg'):
         """Temporal pooling that keeps batch/crop dims intact (avg or max)."""
+        if target_len is None:
+            target_len = self.temporal_target_len
         if target_len is None:
             return tensor
         if tensor.shape[-2] == target_len:
@@ -118,8 +120,10 @@ class Trainer(nn.Module):
         pooled = pooled.transpose(1, 2)
         return pooled.reshape(*orig_shape[:-2], target_len, orig_shape[-1])
 
-    def _stride_to_steps(self, tensor, target_len=8, step=None):
+    def _stride_to_steps(self, tensor, target_len=None, step=None):
         """Temporal striding (subsampling) along time axis, then nearest upsample if needed."""
+        if target_len is None:
+            target_len = self.temporal_target_len
         if target_len is None and (step is None or step <= 1):
             return tensor
         orig_shape = tensor.shape
@@ -644,7 +648,7 @@ class Trainer(nn.Module):
             verb_feat = verb_feat[:,::2,:]
             noun_feat = noun_feat[:,::2,:]'''
 
-            act_feat = self._pool_to_steps(act_feat, target_len=8)
+            act_feat = self._shrink_time(act_feat, target_len=self.temporal_target_len)
             '''verb_feat = verb_feat[:,:8,:]
             noun_feat = noun_feat[:,:8,:]'''
             #print(verb_feat.shape, spatial_verb_feat_cls.shape)
