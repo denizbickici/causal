@@ -19,7 +19,7 @@ class Trainer(nn.Module):
             noun_dim=768,
             action_dim=106,
             lags=1,
-            hidden_dim=256,
+            hidden_dim=128,
             domain_embedding_dim=1024,
             lr=1e-4,
             beta=0.0025,
