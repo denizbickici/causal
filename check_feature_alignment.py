@@ -37,7 +37,7 @@ def find_id_key(d: Dict[str, Any], user_key: str = None) -> str:
     for k in DEFAULT_ID_KEYS:
         if k in d:
             return k
-    raise KeyError(f"No id-like key found. Checked: {DEFAULT_ID_KEYS}. Available keys: {list(d.keys())}")
+    return ""  # handled by caller
 
 
 def reorder_container(container: Any, order: Sequence[int]) -> Any:
@@ -63,11 +63,36 @@ def align_dict(data: Dict[str, Any], order: Sequence[int]) -> Dict[str, Any]:
     return out
 
 
-def load_ids(path: str, id_key: str = None) -> (Dict[str, Any], List[Any], str):
+def load_id_list(path: str) -> List[Any]:
+    """Load an external id list (either json array/dict values or newline-separated text)."""
+    import json
+    if path.endswith(".json"):
+        with open(path, "r") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return list(data.values())
+        elif isinstance(data, list):
+            return data
+        else:
+            raise ValueError(f"Unsupported JSON structure in {path}; expected list or dict.")
+    # Fallback: text file with one id per line
+    with open(path, "r") as f:
+        return [line.strip() for line in f if line.strip()]
+
+
+def load_ids(path: str, id_key: str = None, fallback_list: str = None) -> (Dict[str, Any], List[Any], str):
     data = torch.load(path, map_location="cpu")
     key = find_id_key(data, id_key)
-    ids = list(data[key])
-    return data, ids, key
+    if key:
+        ids = list(data[key])
+        return data, ids, key
+    if fallback_list:
+        ids = load_id_list(fallback_list)
+        return data, ids, f"external:{fallback_list}"
+    raise KeyError(
+        f"No id-like key found and no fallback list provided. Checked keys {DEFAULT_ID_KEYS}. "
+        f"Available keys: {list(data.keys())}"
+    )
 
 
 def main():
@@ -78,6 +103,11 @@ def main():
     parser.add_argument("--verb-id-key", default=None, help="Override id key for verb file")
     parser.add_argument("--noun-id-key", default=None, help="Override id key for noun file")
     parser.add_argument("--action-id-key", default=None, help="Override id key for action file")
+    parser.add_argument("--verb-list", default=None, help="External id list for verb file (json or text, one id per line)")
+    parser.add_argument("--noun-list", default=None, help="External id list for noun file (json or text, one id per line)")
+    parser.add_argument("--action-list", default=None, help="External id list for action file (json or text, one id per line)")
+    parser.add_argument("--canonical-list", default=None,
+                        help="External canonical id list (json or text). Used if canonical file lacks ids.")
     parser.add_argument("--canonical", choices=["verb", "noun", "action"], default="verb",
                         help="Which file defines the canonical ordering")
     parser.add_argument("--max-print", type=int, default=20, help="Max mismatches to print")
@@ -91,19 +121,32 @@ def main():
                         help="Optional path to save aligned action file")
     args = parser.parse_args()
 
-    verb_data, verb_ids, verb_key = load_ids(args.verb, args.verb_id_key)
-    noun_data, noun_ids, noun_key = load_ids(args.noun, args.noun_id_key)
-    act_data, act_ids, act_key = load_ids(args.action, args.action_id_key)
+    verb_data, verb_ids, verb_key = load_ids(args.verb, args.verb_id_key, args.verb_list)
+    noun_data, noun_ids, noun_key = load_ids(args.noun, args.noun_id_key, args.noun_list)
+    act_data, act_ids, act_key = load_ids(args.action, args.action_id_key, args.action_list)
 
     if not (len(verb_ids) == len(noun_ids) == len(act_ids)):
         raise ValueError(f"Length mismatch: verb={len(verb_ids)}, noun={len(noun_ids)}, action={len(act_ids)}")
 
     if args.canonical == "verb":
         canon = verb_ids
+        canon_label = verb_key
     elif args.canonical == "noun":
         canon = noun_ids
+        canon_label = noun_key
     else:
         canon = act_ids
+        canon_label = act_key
+
+    if not canon_label and args.canonical_list:
+        canon = load_id_list(args.canonical_list)
+        canon_label = f"external:{args.canonical_list}"
+        if len(canon) != len(verb_ids):
+            raise ValueError("Canonical list length does not match feature file length.")
+    elif not canon_label:
+        raise ValueError(
+            f"Canonical file '{args.canonical}' has no ids. Provide --canonical-list to supply ordering."
+        )
 
     def make_index(ids: Iterable[Any]) -> Dict[Any, int]:
         idx = {}
