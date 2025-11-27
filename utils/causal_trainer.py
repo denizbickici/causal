@@ -19,7 +19,7 @@ class Trainer(nn.Module):
             noun_dim=768,
             action_dim=106,
             lags=1,
-            hidden_dim=128,
+            hidden_dim=256,
             domain_embedding_dim=1024,
             lr=1e-4,
             beta=0.0025,
@@ -27,9 +27,9 @@ class Trainer(nn.Module):
             delta=0.05,
             correlation='Pearson',
             pretrain_vae=False,
-            fusion_alpha=10,
-            fusion_use_std_scale=True,
-            temporal_target_len=8,
+            fusion_alpha=1,
+            fusion_use_std_scale=False,
+            temporal_target_len=16,
             temporal_pooling='stride',  # 'adaptive_avg' | 'adaptive_max' | 'stride'
             stride_step=0,
             ):

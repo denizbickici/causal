@@ -18,6 +18,13 @@ def get_args(description='whl'):
                         type=float,
                         default=0.0075,
                         help='weight for structure loss in causal vae')
+    parser.add_argument('--fusion_alpha',
+                        type=float,
+                        default=1.0,
+                        help='scaling applied to fused classifier logits (0 disables fusion contribution)')
+    parser.add_argument('--fusion_use_std_scale',
+                        action='store_true',
+                        help='scale fusion contribution by std ratio between fused logits and action logits')
     parser.add_argument('--resume_epoch',
                         type=int,
                         default=0,
@@ -192,11 +199,11 @@ def get_args(description='whl'):
                         help='')
     parser.add_argument('--verb_dim',
                         type=int,
-                        default=1536,
+                        default=1200,
                         help='')
     parser.add_argument('--noun_dim',
                         type=int,
-                        default=180,
+                        default=1200,
                         help='')
     parser.add_argument('--temporal_target_len',
                         type=int,
