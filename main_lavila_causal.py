@@ -111,7 +111,7 @@ def main_worker(gpu, ngpus_per_node, args):
 		            noun_dim=args.noun_dim,
 					action_dim=args.action_dim,		            
 					lags=1,
-					hidden_dim=256,
+					hidden_dim=128,
 					domain_embedding_dim=1024, #1024,
 					lr=args.lr,
 					beta=args.beta,
